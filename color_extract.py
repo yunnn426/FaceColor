@@ -2,7 +2,7 @@ from sklearn.cluster import KMeans
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-#dd
+#된거 같아요 !@!
 #색 추출 프로세스
 def get_color(img):
     #k-means clustering
