@@ -1,142 +1,135 @@
 #import my module
 from process_image import *
-from color_extract import get_color
-from tone_detector import ImageAnalyzer
+
 
 #import module
 import dlib
 import cv2
 from imutils import face_utils
-from skimage import io, color
+import numpy as np
 
-#경고 무시
-import warnings
-warnings.filterwarnings('ignore')
+class FaceDetector:
+    def __init__(self, image):
+        ## face detector와 landmark predictor 정의
+        self.detector = dlib.get_frontal_face_detector()
+        self.predictor = dlib.shape_predictor("res/shape_predictor_68_face_landmarks.dat")
 
-## face detector와 landmark predictor 정의
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+        #image -> cv2 image
+        self.img = cv2.imread(image)
 
-#웜톤 이미지 10장
-warm_img = ["warm/warm1.jpg", "warm/warm2.jpg", "warm/warm3.jpg", "warm/warm4.jpg",
-            "warm/warm5.jpg", "warm/warm6.jpg", "warm/warm7.jpg", "warm/warm8.jpg",
-            "warm/warm9.jpg", "warm/warm10.jpg"]
+        #init face parts
+        self.right_eye = []
+        self.left_eye = []
+        self.mouth = []
+        self.left_cheek = []
+        self.right_cheek = []
 
-#쿨톤 이미지 10장
-cool_img = ["cool/cool1.jpg", "cool/cool2.jpg", "cool/cool3.jpg", "cool/cool4.jpg",
-            "cool/cool5.jpg", "cool/cool6.jpg", "cool/cool7.jpg", "cool/cool8.jpg",
-            "cool/cool9.jpg", "cool/cool10.jpg"]
-
-#이미지 불러오기
-def get_image(img_path):
-    img = cv2.imread(img_path)
-    return img
-
-#얼굴 랜드마크 분석
-def get_face(raw_img):
-    #image -> cv2 image
-    img = cv2.imread(raw_img)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    #detece face 
-    rect = detector(gray, 1)[0] #face 하나만 가져옴
-
-    #determine facial landmark
-    shape = predictor(gray, rect)
-    #and convert landmark(x,y) to NumPy array
-    shape = face_utils.shape_to_np(shape)
-
-    return shape
-
-# # #convert dlib rectangle to bounding box
-# (x, y, w, h) = face_utils.rect_to_bb(rect)
-# cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-#draw circles
-# for (x, y) in shape:
-#     cv2.circle(img, (x, y), 2, (0, 0, 255), -1)
-
-# #######
-# ##show output image(face detection + facial landmarks)
-# cv2.imshow('img', img)
-# cv2.waitKey()
-# cv2.destroyAllWindows()
-
-
-##    1. draw eyebrow box (18~22, 23~27)
-##    수정 필요, 눈썹으로는 머리색 구할 수 없음
-
-
-# ##    2. draw lip box (49~60 - 61~68)
-# #draw lipsOut to rectangle
-# lip1_img = points4_img(img, shape, 48, 54, 52, 58) #get image for lips using 4 points
-# show_img(lip1_img)
-
-# #get lip color
-# rgb = get_color(lip1_img)
-# # #print(rgb)
-# # lab = color.rgb2lab([rgb])
-# # print(lab)
-
-# ##    3. draw eye box
-# #draw eye1 to rectangle
-# eye1_img = points2_img(img, shape, 37, 40) #get eye image using 2 points
-# show_img(eye1_img)
-
-# #draw eye2 to rectangle
-# eye2_img = points2_img(img, shape, 43, 46)
-# show_img(eye2_img)
-
-
-#중첩리스트 풀기
-def flatten(list):
-    result = []
-    for item in list:
-        result.extend(item)
-    return result
-
-
-##    4. draw skin box
-#draw skin to rectangle
-def get_skin_rgb(img, shape):
-    mid1 = (shape[40] + shape[48]) // 2
-    skin1_img = points1_img(img, mid1, False)
-    #show_img(skin1_img)
-    rgb1 = get_color(skin1_img)
-
-    mid2 = (shape[47] + shape[54]) // 2
-    skin2_img = points1_img(img, mid2, True)
-    #show_img(skin2_img)
-    rgb2 = get_color(skin2_img)
-
-    rgb = (rgb1 + rgb2) / 2
-    rgb_arr = flatten(rgb)
+        self.detect_face()
     
-    return rgb_arr
+    def detect_face(self):
+        #얼굴 랜드마크 분석
+        face_parts = [[],[],[],[],[],[],[],[]]
+
+        gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
+
+        #detece face 
+        rect = self.detector(gray, 1)[0] #face 하나만 가져옴
+
+        #determine facial landmark
+        shape = self.predictor(gray, rect)
+
+        #and convert landmark(x,y) to NumPy array
+        shape = face_utils.shape_to_np(shape)
+
+        idx = 0
+        for (name, (i, j)) in face_utils.FACIAL_LANDMARKS_IDXS.items():   #FACIAL_LANDMARKS_IDXS: mouth, inner_mouth, right_eyebrow, left_eyebrow, right_eye, left_eye, nose, jaw
+            face_parts[idx] = shape[i:j]
+            idx += 1
+        
+        self.right_eye = self.extract_face_part(face_parts[4])
+        self.left_eye = self.extract_face_part(face_parts[5])
+        self.mouth = self.extract_face_part(face_parts[0])
+        #좌우 뺨은 상대적으로 추출
+        self.left_cheek = self.img[shape[29][1]:shape[33][1], shape[4][0]:shape[48][0]]
+        self.right_cheek = self.img[shape[29][1]:shape[33][1], shape[54][0]:shape[12][0]]
+
+    def extract_face_part(self, face_part_points):
+        (x, y, w, h) = cv2.boundingRect(face_part_points)
+        crop = self.img[y:y+h, x:x+w]
+        adj_points = np.array([np.array([p[0]-x, p[1]-y]) for p in face_part_points])
+
+        # Create an mask
+        mask = np.zeros((crop.shape[0], crop.shape[1]))
+        cv2.fillConvexPoly(mask, adj_points, 1)
+        mask = mask.astype(bool)
+        crop[np.logical_not(mask)] = [255, 0, 0]
+
+        #show_img(crop)
+        return crop
 
 
-#ImageAnalyzer 호출
-image_analyzer = ImageAnalyzer()
+# ##    1. draw eyebrow box (18~22, 23~27)
+# ##    수정 필요, 눈썹으로는 머리색 구할 수 없음
 
-#웜톤 이미지 10장 분석
-print("### 10 Warm images ###")
-for img_path in warm_img :
-    shape = get_face(img_path)
-    img = get_image(img_path)
-    rgb = get_skin_rgb(img, shape)
-
-    skin_tone = image_analyzer.analyze_image(rgb)
-
-    print('skin-tone:', skin_tone)  
+# #중첩리스트 풀기
+# def flatten(list):
+#     result = []
+#     for item in list:
+#         result.extend(item)
+#     return result
 
 
-#쿨톤 이미지 10장 분석
-# print("\n\n### 10 Cool images ###")
-# for img_path in cool_img :
-#     shape = get_face(img_path)
-#     img = get_image(img_path)
-#     rgb = get_skin_rgb(img, shape)
+# #############################
+# #   Get Face Parts to RGB   #
+# #     (lips, eyes, skin)    #
+# #############################
 
-#     skin_tone = image_analyzer.analyze_image(rgb)
+# ## 입술 rgb 구하기
 
-#     print('skin-tone:', skin_tone)  
+# def get_lip_rgb(img, shape):
+#     lip_img = points4_img(img, shape, 48, 54, 52, 58) #get image for lips using 4 points
+#     show_img(lip_img)
+#     #get lip color
+#     rgb = get_color(lip_img)
+#     rgb_arr = flatten(rgb)
+
+#     return rgb_arr
+
+
+# ## 눈동자 rgb 구하기
+
+# def get_eye_rgb(img, shape):
+#     #좌우 눈동자 구하기
+#     eye1_img = points2_img(img, shape, 37, 40) #get eye image using 2 points
+#     eye2_img = points2_img(img, shape, 43, 46)
+
+#     #눈동자1 rgb값
+#     rgb1 = get_color(eye1_img)
+#     #눈동자2 rgb값
+#     rgb2 = get_color(eye2_img)
+#     #평균 rgb
+#     rgb = (rgb1 + rgb2) / 2
+#     rgb_arr = flatten(rgb)
+
+#     return rgb_arr
+
+
+# ## 피부 rgb 구하기
+
+# def get_skin_rgb(img, shape):
+#     #좌우 뺨 구하기
+#     mid1 = (shape[40] + shape[48]) // 2
+#     skin1_img = points1_img(img, mid1, False)
+#     #뺨1 rgb값
+#     rgb1 = get_color(skin1_img)
+
+#     mid2 = (shape[47] + shape[54]) // 2
+#     skin2_img = points1_img(img, mid2, True)
+#     #뺨2 rgb값
+#     rgb2 = get_color(skin2_img)
+
+#     #평균 rgb
+#     rgb = (rgb1 + rgb2) / 2
+#     rgb_arr = flatten(rgb)
+    
+#     return rgb_arr
