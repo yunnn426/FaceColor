@@ -1,52 +1,35 @@
-from PIL import Image
-from tone_detector import ImageAnalyzer
+import os
 
-#웜 기준 컬러
-warm = ["basecolor/warm_fall1.jpg", "basecolor/warm_fall2.jpg", "basecolor/warm_fall3.jpg", "basecolor/warm_fall4.jpg", "basecolor/warm_fall5.jpg", "basecolor/warm_fall6.jpg",
-        "basecolor/warm_spring1.jpg", "basecolor/warm_spring2.jpg", "basecolor/warm_spring3.jpg", "basecolor/warm_spring4.jpg", "basecolor/warm_spring5.jpg", "basecolor/warm_spring6.jpg"]
-#웜 기준 컬러의 lab (a, b)
-warm_std_a = []
-warm_std_b = []
-
-#쿨 기준 컬러
-cool = ["basecolor/cool_summer1.jpg", "basecolor/cool_summer2.jpg", "basecolor/cool_summer3.jpg", "basecolor/cool_summer4.jpg", "basecolor/cool_summer5.jpg", "basecolor/cool_summer6.jpg",
-            "basecolor/cool_winter1.jpg", "basecolor/cool_winter2.jpg", "basecolor/cool_winter3.jpg", "basecolor/cool_winter4.jpg", "basecolor/cool_winter5.jpg", "basecolor/cool_winter6.jpg"]
-#쿨 기준 컬러의 lab (a, b)
-cool_std_a = []
-cool_std_b = []
-
-def get_lab(x):
-    # 이미지 열기
-    img = Image.open(x)
-
-    # 이미지의 rgb값 계산
-    avg_color = img.resize((1, 1)).getpixel((0, 0))
-
-    image_analyzer = ImageAnalyzer()
-    
-    #lab값 계산
-    lab_color = image_analyzer.RGB_to_LAB(avg_color)
-    
-    return lab_color
+file_path = "../Desktop/ex_warm"
+file_names = os.listdir(file_path)
+file_names
 
 
-#웜 lab 계산
-for x in warm:
-    lab_color = get_lab(x)
-   
-    #lab값 저장
-    warm_std_a.append(lab_color[1])
-    warm_std_b.append(lab_color[2])
+i=1
+for name in file_names:
+    src = os.path.join(file_path, name)
+    dst = "warm" + str(i) + '.jpg'
+    dst = os.path.join(file_path, dst)
+    os.rename(src, dst)
+    i += 1
 
-#쿨 lab 계산
-for x in cool:
-    lab_color = get_lab(x)
+#그래프
+# import matplotlib.pyplot as plt
+# import numpy as np
 
-    #lab값 저장
-    cool_std_a.append(lab_color[1])
-    cool_std_b.append(lab_color[2])
+# def plot_lab(b):
+#     x = np.arange(1, 11)
+#     y = np.array(b)
 
-print("warm_std_a: ", warm_std_a)
-print("warm_std_b: ", warm_std_b)
-print("cool_std_a: ", cool_std_a)
-print("cool_std_b: ", cool_std_b)
+#     threshold = 18
+#     plt.plot(x, y, 'bo', label='cool')
+
+#     below_threshold = y < threshold
+#     above_threshold = np.logical_not(below_threshold)
+#     plt.plot(x[above_threshold], y[above_threshold], 'ro', label='warm')
+
+#     plt.legend(loc='upper right')
+#     plt.xlabel('images')
+#     plt.ylabel('b')
+#     plt.title('Value of B(LAB) by image')
+#     plt.show()
