@@ -1,12 +1,11 @@
-#import my module
-from process_image import *
-
-
 #import module
 import dlib
 import cv2
 from imutils import face_utils
 import numpy as np
+
+#오류 flag
+flag = 0
 
 class FaceDetector:
     def __init__(self, image):
@@ -25,6 +24,7 @@ class FaceDetector:
         self.right_cheek = []
 
         self.detect_face()
+        
     
     def detect_face(self):
         #얼굴 랜드마크 분석
@@ -33,7 +33,13 @@ class FaceDetector:
         gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
 
         #detece face 
-        rect = self.detector(gray, 1)[0] #face 하나만 가져옴
+        try:
+            rect = self.detector(gray, 1)[0] #face 하나만 가져옴
+        except:
+            print("얼굴 인식 오류, 다른 사진을 사용하세요")
+            global flag 
+            flag = 1
+            return
 
         #determine facial landmark
         shape = self.predictor(gray, rect)
@@ -67,69 +73,3 @@ class FaceDetector:
         #show_img(crop)
         return crop
 
-
-# ##    1. draw eyebrow box (18~22, 23~27)
-# ##    수정 필요, 눈썹으로는 머리색 구할 수 없음
-
-# #중첩리스트 풀기
-# def flatten(list):
-#     result = []
-#     for item in list:
-#         result.extend(item)
-#     return result
-
-
-# #############################
-# #   Get Face Parts to RGB   #
-# #     (lips, eyes, skin)    #
-# #############################
-
-# ## 입술 rgb 구하기
-
-# def get_lip_rgb(img, shape):
-#     lip_img = points4_img(img, shape, 48, 54, 52, 58) #get image for lips using 4 points
-#     show_img(lip_img)
-#     #get lip color
-#     rgb = get_color(lip_img)
-#     rgb_arr = flatten(rgb)
-
-#     return rgb_arr
-
-
-# ## 눈동자 rgb 구하기
-
-# def get_eye_rgb(img, shape):
-#     #좌우 눈동자 구하기
-#     eye1_img = points2_img(img, shape, 37, 40) #get eye image using 2 points
-#     eye2_img = points2_img(img, shape, 43, 46)
-
-#     #눈동자1 rgb값
-#     rgb1 = get_color(eye1_img)
-#     #눈동자2 rgb값
-#     rgb2 = get_color(eye2_img)
-#     #평균 rgb
-#     rgb = (rgb1 + rgb2) / 2
-#     rgb_arr = flatten(rgb)
-
-#     return rgb_arr
-
-
-# ## 피부 rgb 구하기
-
-# def get_skin_rgb(img, shape):
-#     #좌우 뺨 구하기
-#     mid1 = (shape[40] + shape[48]) // 2
-#     skin1_img = points1_img(img, mid1, False)
-#     #뺨1 rgb값
-#     rgb1 = get_color(skin1_img)
-
-#     mid2 = (shape[47] + shape[54]) // 2
-#     skin2_img = points1_img(img, mid2, True)
-#     #뺨2 rgb값
-#     rgb2 = get_color(skin2_img)
-
-#     #평균 rgb
-#     rgb = (rgb1 + rgb2) / 2
-#     rgb_arr = flatten(rgb)
-    
-#     return rgb_arr

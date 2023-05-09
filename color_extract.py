@@ -2,10 +2,8 @@ from sklearn.cluster import KMeans
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from itertools import compress
-#된거 같아요 !@!
-#색 추출 프로세스
 
+#색 추출 프로세스
 class ColorExtractor:
     COLORS = None
     
@@ -29,10 +27,10 @@ class ColorExtractor:
         bar = self.plot_colors(hist1, clt.cluster_centers_) ##clt.cluster_centers_: return rgb
         #print(face_color)
         # show our color bart
-        plt.figure()
-        plt.axis("off")
-        plt.imshow(bar)
-        plt.show()
+        # plt.figure()
+        # plt.axis("off")
+        # plt.imshow(bar)
+        # plt.show()
 
     def get_face_color(self, color_list, hist):
         color = []
