@@ -6,8 +6,14 @@ from pickle import NONE
 from colormath.color_objects import LabColor, HSVColor, sRGBColor
 from colormath.color_conversions import convert_color
 
-#from my module
-from standards import warm_std_b, cool_std_b, lab_weight
+#Lab의 b값
+#웜쿨 판단용
+warm_std_b = [13.600828619628416, 13.63082566685463, 20.024053123569743, 2.8507945613448897, 5.5708967963920335] 
+cool_std_b = [7.190367258960277, 6.9384118526366, 9.126889116433446, -5.286951388817933, -2.655967261522798]
+
+#피부(좌우), 입술, 눈동자(좌우) 가중치
+lab_weight = [30, 30, 20, 5, 5]
+
 
 class ToneDetector:
     
@@ -47,8 +53,8 @@ class ToneDetector:
 
         #피부, 입술, 눈동자 측정
         for i in range(5):
-            warm_dist += abs(lab_b[i] - warm_std_b) * lab_weight[i]
-            cool_dist += abs(lab_b[i] - cool_std_b) * lab_weight[i]
+            warm_dist += abs(lab_b[i] - warm_std_b[i]) * lab_weight[i]
+            cool_dist += abs(lab_b[i] - cool_std_b[i]) * lab_weight[i]
         
         #warm_dist > cool_dist면 cool
         #cool_dist > warm_dist면 warm
