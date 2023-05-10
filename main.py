@@ -10,9 +10,12 @@ import firebase
 import warnings
 warnings.filterwarnings('ignore')
 
-#샘플이미지 각각 50장
-warm_path = "res/warm/warm"
-cool_path = "res/cool/cool"
+#샘플이미지 각각 25장
+spring_path = "res/spring/warm"
+fall_path = "res/fall/warm"
+
+summer_path = "res/summer/cool"
+winter_path = "res/winter/cool"
 
 #예시 이미지 10장 (1~5: 웜톤, 6~10: 쿨톤)
 example_path = "res/example/ex"
@@ -22,8 +25,13 @@ test_path = "res/test/test"
 
 def main():
     #process_one()
-    #process_test(example_path)
-    process_test(example_path)
+    #process_test(test_path)
+    print("Warm>Fall 사진 25장")
+    process_test(fall_path)
+    print("Cool>Winter 사진 25장")
+    process_test(winter_path)
+    #process_test(fall_path)
+    #process_test(winter_path)
 
 ## show image
 def show_img(img):
@@ -34,7 +42,7 @@ def show_img(img):
 #샘플이미지 1장 처리
 def process_one():
     #Face Detection
-    face_detector = FaceDetector("res/warm/warm1.jpg")
+    face_detector = FaceDetector("res/winter/cool26.jpg")
     face = [face_detector.left_cheek, face_detector.right_cheek,
             face_detector.mouth,
             face_detector.left_eye, face_detector.right_eye]
@@ -42,6 +50,9 @@ def process_one():
     #Color Detection
     clusters = 2
     lab_b = []
+    hsv_s = []
+    hsv_v = []
+
     tone_detector = ToneDetector()
     for f in face: #뺨 좌 -> 뺨 우 -> 입술 -> 눈 좌 -> 눈 우 순으로 rgb, lab 계산 
         #show_img(f)
@@ -55,16 +66,45 @@ def process_one():
         lab_color = tone_detector.RGB_to_LAB(rgb_color)
         #print(lab_color)
         lab_b.append(lab_color[2])
+
+        #hsv
+        hsv_color = tone_detector.RGB_to_HSV(rgb_color)
+        hsv_s.append(hsv_color[1])
+        hsv_v.append(hsv_color[2])
+        #print(hsv_color)
     
     #print(lab_b)
+    
+    #1차 톤 구분 (웜 / 쿨)
     tone = tone_detector.warm_or_cool(lab_b)
-    print("skin-tone: ", tone)
+
+    #2차 톤 구분
+    #봄 / 가을
+    if (tone == "warm"):
+        season = tone_detector.spring_or_fall(hsv_v)
+
+    #여름 / 겨울
+    else:
+        season = tone_detector.summer_or_winter(hsv_v)
+
+    #3차 세부 구분
+    #세부 구분은 입술 색으로만 판별함
+
+    #봄> 브라이트/라이트
+    if (season == "warm_spring"):
+        detail = tone_detector.season_spring(hsv_s[2], hsv_v[2])
+
+    #가을> 
+    elif (season == "warm_fall"):
+        detail = tone_detector.season_fall(hsv_s[2], hsv_v[2])
+
+    print("skin-tone: ", detail)
 
 
 #예시 이미지 10장 처리
 def process_test(path):
-    for i in range(10):
-        img_path = path + str(i + 1) + ".jpg"
+    for i in range(25):
+        img_path = path + str(i + 26) + ".jpg"
         print(img_path)
         
         #Face Detection
@@ -85,6 +125,9 @@ def process_test(path):
         #Color Detection
         clusters = 2
         lab_b = []
+        hsv_s = []
+        hsv_v = []
+
         tone_detector = ToneDetector()
         for f in face: #뺨 좌 -> 뺨 우 -> 입술 -> 눈 좌 -> 눈 우 순으로 rgb, lab 계산 
             #show_img(f)
@@ -98,10 +141,47 @@ def process_test(path):
             lab_color = tone_detector.RGB_to_LAB(rgb_color)
             #print(lab_color)
             lab_b.append(lab_color[2])
+
+            #hsv
+            hsv_color = tone_detector.RGB_to_HSV(rgb_color)
+            hsv_s.append(hsv_color[1])
+            hsv_v.append(hsv_color[2])
     
         #print(lab_b)
+        #1차 톤 구분 (웜 / 쿨)
         tone = tone_detector.warm_or_cool(lab_b)
-        print("skin-tone:", tone)
+
+        #2차 톤 구분
+        #봄 / 가을
+        if (tone == "warm"):
+            season = tone_detector.spring_or_fall(hsv_v)
+
+        #여름 / 겨울
+        else:
+            season = tone_detector.summer_or_winter(hsv_v)
+
+        #3차 세부 구분
+        #세부 구분은 입술 색으로만 판별함
+
+        #봄> 브라이트/라이트
+        if (season == "warm_spring"):
+            detail = tone_detector.season_spring(hsv_s[2], hsv_v[2])
+
+        #가을> 딥/뮤트/스트롱
+        elif (season == "warm_fall"):
+            detail = tone_detector.season_fall(hsv_s[2], hsv_v[2])
+
+        #여름> 라이트/브라이트/뮤트
+        elif (season == "cool_summer"):
+            detail = tone_detector.season_summer(hsv_s[2], hsv_v[2])
+
+        #겨울> 브라이트/딥
+        else:
+            detail = tone_detector.season_winter(hsv_s[2], hsv_v[2])
+
+        print("skin-tone: ", detail)
+
+
 
 
 
