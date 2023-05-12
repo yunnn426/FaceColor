@@ -23,13 +23,17 @@ example_path = "res/example/ex"
 #테스트 이미지 (무작위)
 test_path = "res/test/test"
 
+#결과값
+color = "None"
+face = "a"
+
 def main():
-    #process_one()
+    analysis()
     #process_test(test_path)
-    print("Warm>Fall 사진 25장")
-    process_test(fall_path)
-    print("Cool>Winter 사진 25장")
-    process_test(winter_path)
+    #print("Warm>Fall 사진 25장")
+    #process_test(fall_path)
+    #print("Cool>Winter 사진 25장")
+    #process_test(winter_path)
     #process_test(fall_path)
     #process_test(winter_path)
 
@@ -39,14 +43,22 @@ def show_img(img):
     cv2.waitKey()
     cv2.destroyAllWindows()
     
-#샘플이미지 1장 처리
-def process_one():
+#이미지 1장 처리
+def analysis():
     #Face Detection
-    face_detector = FaceDetector("res/winter/cool26.jpg")
+    face_detector = FaceDetector("user_image/user.jpg")
+
+    #오류 처리
+    from face_detector import flag
+    #print(flag)
+    if (flag == 1):
+        print("처리할 수 없는 사진")
+        return
+    
     face = [face_detector.left_cheek, face_detector.right_cheek,
             face_detector.mouth,
             face_detector.left_eye, face_detector.right_eye]
-        
+    
     #Color Detection
     clusters = 2
     lab_b = []
@@ -90,15 +102,27 @@ def process_one():
     #3차 세부 구분
     #세부 구분은 입술 색으로만 판별함
 
+    global color
     #봄> 브라이트/라이트
     if (season == "warm_spring"):
-        detail = tone_detector.season_spring(hsv_s[2], hsv_v[2])
+        detail, color = tone_detector.season_spring(hsv_s[2], hsv_v[2])
 
     #가을> 
     elif (season == "warm_fall"):
-        detail = tone_detector.season_fall(hsv_s[2], hsv_v[2])
+        detail, color = tone_detector.season_fall(hsv_s[2], hsv_v[2])
 
+    #여름> 라이트/브라이트/뮤트
+    elif (season == "cool_summer"):
+        detail, color = tone_detector.season_summer(hsv_s[2], hsv_v[2])
+
+    #겨울> 브라이트/딥
+    else:
+        detail, color = tone_detector.season_winter(hsv_s[2], hsv_v[2])
+    
+    print("color_result: ", color)
     print("skin-tone: ", detail)
+    
+    
 
 
 #예시 이미지 10장 처리
@@ -189,3 +213,4 @@ def process_test(path):
 if __name__ == '__main__':
     firebase.start()
     main()
+    firebase.result(color)

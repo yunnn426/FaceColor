@@ -27,6 +27,7 @@ class ToneDetector:
     
     def __init__(self):
         self.skin_tone = None
+        self.color_result = None
 
     def RGB_to_LAB(self, RGB):
         R = RGB[0]
@@ -55,7 +56,11 @@ class ToneDetector:
 
         return HSV
     
-    #웜쿨 구분
+    
+    ###########
+    # 웜쿨 구분 #
+    ###########
+
     def warm_or_cool(self, lab_b):
         warm_dist = 0 #웜과의 거리
         cool_dist = 0 #쿨과의 거리
@@ -73,6 +78,11 @@ class ToneDetector:
             self.skin_tone = 'warm'
 
         return self.skin_tone
+
+
+    ###########
+    # 계절 구분 #
+    ###########
 
     #웜-> 봄/가을 구분
     def spring_or_fall(self, hsv_v):
@@ -112,6 +122,27 @@ class ToneDetector:
         
         return self.skin_tone
 
+
+    ###########
+    # 세부 구분 #
+    ###########
+    """
+    결과 반환용
+    warm_spring_bright == 0
+    warm_spring_light == 1
+
+    cool_summer_light == 2
+    cool_summer_bright == 3
+    cool_summer_mute = 4
+
+    warm_fall_strong == 5
+    warm_fall_mute == 6
+    warm_fall_deep == 7
+
+    cool_winter_bright == 8
+    cool_winter_deep == 9
+    """
+
     #봄-> 라이트/브라이트 구분
     def season_spring(self, s, v) :
         light_dist = 0
@@ -133,10 +164,12 @@ class ToneDetector:
 
         if bright_dist < light_dist:
             self.skin_tone = "warm_spring_bright"
+            self.color_result = 0
         else:
             self.skin_tone = "warm_spring_light"
+            self.color_result = 1
 
-        return self.skin_tone
+        return self.skin_tone, self.color_result
 
     #여름-> 라이트/브라이트/뮤트 구분
     def season_summer(self, s, v) :
@@ -166,15 +199,19 @@ class ToneDetector:
         if light_dist < bright_dist:
             if light_dist < mute_dist:
                 self.skin_tone = "cool_summer_light"
+                self.color_result = 2
             else:
                 self.skin_tone = "cool_summer_mute"
+                self.color_result = 4
         else :
             if bright_dist < mute_dist:
                 self.skin_tone = "cool_summer_bright"
+                self.color_result = 3
             else:
                 self.skin_tone = "cool_summer_mute"
+                self.color_result = 4
             
-        return self.skin_tone
+        return self.skin_tone, self.color_result
         
     #가을-> 딥/뮤트/스트롱 구분
     def season_fall(self, s, v) :
@@ -203,15 +240,19 @@ class ToneDetector:
         if deep_dist < mute_dist:
             if deep_dist < strong_dist:
                 self.skin_tone = "warm_fall_deep"
+                self.color_result = 7
             else:
                 self.skin_tone = "warm_fall_strong"
+                self.color_result = 5
         else :
             if mute_dist < strong_dist:
                 self.skin_tone = "warm_fall_mute"
+                self.color_result = 6
             else:
                 self.skin_tone = "warm_fall_strong"
+                self.color_result = 5
         
-        return self.skin_tone
+        return self.skin_tone, self.color_result
 
     #겨울-> 브라이트/딥 구분
     def season_winter(self, s, v) :
@@ -234,10 +275,12 @@ class ToneDetector:
 
         if bright_dist < deep_dist:
             self.skin_tone = "cool_winter_bright"
+            self.color_result = 8
         else :
             self.skin_tone = "cool_winter_deep"
+            self.color_result = 9
 
-        return self.skin_tone
+        return self.skin_tone, self.color_result
         
     # #그래프 출력용
     # def get_b(self, RGB):
