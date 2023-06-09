@@ -60,7 +60,6 @@ def start():
     user = user_list[0]
     # user가 최근파일을 올린 아이디입니당.
 
-    
 
 def result(color):
     firebase_admin.initialize_app(cred)
